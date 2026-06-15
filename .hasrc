@@ -25,7 +25,7 @@ pkg-config
 uptime
 
 # Used by the Copy buttons
-xclip
+xsel
 
 # Optional Moksha version reporting
 enlightenment_remote
