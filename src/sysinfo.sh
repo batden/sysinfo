@@ -69,7 +69,37 @@ yad --title="$(_ "Module information")" --button="$(_ "Close")" --width=500 \
 export -f show_mod_info
 
 # CPU tab
-lscpu | sed -r "s/:[ ]*/\n/" |\
+(
+THREADS=$(lscpu | awk -F: '/^CPU\(s\):/ {gsub(/^[ \t]+/, "", $2); print $2}')
+CORES=$(lscpu | awk -F: '/^Core\(s\) per socket:/ {gsub(/^[ \t]+/, "", $2); print $2}')
+SOCKETS=$(lscpu | awk -F: '/^Socket\(s\):/ {gsub(/^[ \t]+/, "", $2); print $2}')
+TPC=$(lscpu | awk -F: '/^Thread\(s\) per core:/ {gsub(/^[ \t]+/, "", $2); print $2}')
+
+TOTAL_CORES=$((CORES * SOCKETS))
+
+lscpu | while IFS=: read -r KEY VALUE
+do
+    VALUE=$(echo "$VALUE" | sed 's/^[[:space:]]*//')
+
+    case "$KEY" in
+        "CPU(s)")
+            printf "%s\n%s\n" "$(_ "Threads")" "$THREADS"
+            ;;
+        "Core(s) per socket")
+            printf "%s\n%s\n" "$(_ "CPU Cores")" "$TOTAL_CORES"
+            ;;
+        "Socket(s)")
+            printf "%s\n%s\n" "$(_ "Sockets")" "$SOCKETS"
+            ;;
+        "Thread(s) per core")
+            printf "%s\n%s\n" "$(_ "Threads per core")" "$TPC"
+            ;;
+        *)
+            printf "%s\n%s\n" "$KEY" "$VALUE"
+            ;;
+    esac
+done
+) | \
 yad --plug=$KEY --tabnum=1 --image=cpu --text="$(_ "CPU information")" \
 --list --no-selection --column="$(_ "Parameter")" --column="$(_ "Value")" \
 --button="$(_ "Copy"):bash -c 'xsel --clipboard < \"$CPU_INFO\"'" &
